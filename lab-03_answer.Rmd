@@ -1,6 +1,6 @@
 ---
 title: "My answers"
-author: "My name"
+author: "Sara Manders"
 date: '`r format(Sys.time(), "%d %B, %Y")`'
 output: html_document
 ---
