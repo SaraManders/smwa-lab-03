@@ -93,15 +93,24 @@ library(modelsummary)
 1. What is search engine advertising?
   Explain the mechanisms through which it might ultimately influence sales revenue.
 
-**Write your answer here**
+Search engine advertising is a form of internet advertising: paid search advertising which is the largest investing format by revenue. Google Inc. is the leading SEM provider worldwide.
+As Blake, Nosko and Tadelis argue, measuring a causal relationship between Internet-advertising expenditures and sales remains a serious challenge. They believe that, besides the advertiser's campaign, the amount spent on internet marketing is a function of the behavior and intent of customers as well.
+
+Ultimately, sales revenue can be influenced (increased) by search engine advertising accordingly:
+- higher click-through-rate to your website of existing consumers or potential consumer that have already got to know the company/product(s)
+- potential new customers gained by appearing at the top of the search list
+--> Here, brand paid search links simply intercepts consumers at their last point in their navigational process
+- drawing potential new customers by their interest due to targeting their ads to the activity users are engaged in
+- more new users signing up to the company's website
+
   
 2. Why would it be difficult to estimate the effectiveness of search engine advertising with purely observational data?
 
-**Write your answer here**
+According to Blake, Nosko and Tadelis, it is very difficult to measure and estimate the search engine advertising with purely observational data, because of severe endogeneity as well as the influence of behavior and intent of consumers on internet marketing expenditure as this remains unmeasured. Strong assumptions must be made to validate the findings with these expectations.
 
 3. Explain why the experiment that Blake, Nosko and Tadelis runs allows them to avoid the issues in (2), and accurately measure the causal effect of search engine advertising on sales.
 
-**Write your answer here**
+Blake, Nosko and Tadelis overcome the endogeneity problem with their controlled experiments. In their experiments, they remove the search advertising in 65 of 210 DMAs in the US, which removes the endogeneity problem there as people will not have found the brand's names in ads, but only by organic search results. The endogeneity problem arises with search engine advertising, because the ads simply appear above the organic search results, also showing the brand. Therefore, the customer would have found information on the brand anyhow.
 
 With some conceptual knowledge under our belt, let's get our hands dirty.
 We will start by cleaning up the data a little and then producing some summary plots to build up an understanding of the main patterns.
@@ -109,7 +118,7 @@ We will start by cleaning up the data a little and then producing some summary p
 4. Load the data into `R` naming the data `paidsearch`.
 
 ```{r}
-# Write your answer here
+paidsearch <- read_csv("data/paid_search.csv")
 ```
 
 
@@ -117,7 +126,11 @@ We will start by cleaning up the data a little and then producing some summary p
 If you find that one of the column names in the data has whitespace in it, you will want to replace the whitespace with underscores, "`_`"
 
 ```{r}
-# Write your answer here
+glimpse(paidsearch)
+
+paidsearch <- paidsearch %>%
+  rename("search_stays_on" = `search stays on`)
+
 ```
 
 
