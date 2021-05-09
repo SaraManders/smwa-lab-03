@@ -246,7 +246,13 @@ knitr::include_graphics('figs/ebay_experiment.png')
 
 
 ```{r}
-# Write your answer here
+
+paidsearch %>%
+  ggplot() +
+  geom_line() +
+  ggtitle() +
+  theme_bw()
+
 ```
 
 
