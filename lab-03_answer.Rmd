@@ -247,9 +247,8 @@ knitr::include_graphics('figs/ebay_experiment.png')
 ```{r}
 
 paidsearch %>%
-  ggplot(aes(x = calweek, y = avg_rev_calweek, color = factor(search_stays_on), fill =  factor(search_stays_on), 
-             group = factor(search_stays_on))) +
-  geom_line(aes(group = factor(search_stays_on), colour = factor(search_stays_on))) + #I can't get the lines to split based on factor(search_stays_on)
+  ggplot(aes(x = calweek, y = avg_rev_calweek, color = factor(search_stays_on))) +
+  geom_line(aes(colour = factor(search_stays_on))) + #I can't get the lines to split based on factor(search_stays_on)
   geom_vline(xintercept = 21) +
   ggtitle("Average Daily Revenue from Search Engine Advertising") +
   labs(x = "Calender Week",
@@ -262,14 +261,18 @@ paidsearch %>%
 10. Is average revenue different for DMAs that have turned off search advertising compared to those where it remains on?
 Why might this be the case?
 
-**Write your answer here**
+It slightly is different just after the search advertising has been turned off, however it returns to be equal a few weeks later.
+Therefore, there seems to be a short term effect but no long term effect of turning search advertising on or off, based on this graph.
+
+The customers who are in de DMA where the search advertising has been shut off, don't encounter any directed search advertising anymore. However, these are not the only touch points, consumers have with certain brands. In the long term, they will be reminded or directed towards a certain brand anyhow, via offline advertising or WOM, or anything else.
 
 11. From the graph above, can you "eye-conometrically" see any effect of turning off search engine ads?^[
   All "clean" (well-executed) Difference in Difference papers should produce a plot where you can visually assess what is going on.
   If you don't see one, its could a warning sign that whatever comes next is an artifact of the statistical model, rather than the experiment (or, if published in a journal *maybe* an editor asked to suppress the figure to save space).
 ]
 
-**Write your answer here**
+From the graph-above I can see a short-term effect of which not yet known whether it is significant.
+The revenues are a bit more flat, less spikey, for the areas where the search engine advertising had been shut off. However, on the longer term (after a few weeks already), the revenues are very much alike.
 
 
 Now we will go back to working with the full dataset `paidsearch`.
@@ -278,7 +281,30 @@ Now we will go back to working with the full dataset `paidsearch`.
 Also rename the variable `treatment_period` to `after`.
 
 ```{r}
-# Write your answer here
+
+#rename the variable treatment_period to after:
+paidsearch <- paidsearch %>%
+  rename(after = treatment_period)
+
+#create a new variable treatment
+
+paidsearch %>%
+  mutate(treatment = case_when(
+    search_stays_on==1 ~ TRUE,TRUE ~ FALSE))
+
+# Create a new variable `treatment` that takes the value 1 if search engine advertising is switched off, and 0 if search engine advertising stays on
+paidsearch <- paidsearch %>%
+  mutate(treatment = case_when(
+    search_stays_on==0 ~ TRUE,TRUE ~ FALSE))
+
+#paidsearch <- paidsearch %>%
+#  select(-`as.numeric(paidsearch$treatment)`)
+
+paidsearch <- paidsearch %>%
+  mutate(treatment = as.numeric(treatment))
+
+
+
 ```
 
 
@@ -294,42 +320,73 @@ Thus $\bar{y}_{after=1, treat =1}$ is average revenue for DMAs in the treatment 
 Compute each of these four $\bar{y}$'s.
 
 ```{r}
-# Write your answer here
+
+means <- paidsearch %>%
+  group_by(treatment, after) %>%
+  summarize(revenue=mean(revenue)) %>%
+  ungroup()
+
+print(means)
+
+did_table <- means %>%
+  pivot_wider(names_from = after,
+              values_from = revenue)
+
+print(did_table)
+
 ```
 
 
 14. Use the averages you computed in (13) to the treatment effect of turning off search engine advertising, i.e. $\hat{\beta}_{DiD}$.
 
 ```{r}
-# Write your answer here
+
+bef_after_untreated <- filter(means, treatment==1,after==1)$revenue -
+  filter(means, treatment==1, after==0)$revenue
+
+bef_after_treated <- filter(means, treatment==0,after==1)$revenue -
+  filter(means, treatment==0, after==0)$revenue
+
+did <- bef_after_treated - bef_after_untreated
+
+print(paste("Diff in Diff EstimateL ", did))
+
 ```
 
 
 15. Interpret the effect you computed from the point of view of a marketing analyst working at eBay. Is it large from a marketing viewpoint?
 
-**Write your answer here**
+The effect size estimated is about 1.1, which from a marketing standpoint is large as it exceeds the cutoff of 0.8
 
 16. We rarely see analytical work use this difference in averages approach.
 Can you explain why that might be the case?
 
-**Write your answer here**
+It is a relatively young way of analysis
 
 17. Estimate a linear regression that computes the equivalent Difference-in-Difference estimate as (13).
 
 ```{r}
-# Write your answer here
+
+reg_did <- lm(revenue ~ after*treatment, data = paidsearch)
+
+tidy(reg_did, conf.int = TRUE)
+
 ```
 
 
 18. Is $\hat{\beta}_{DiD}$ statistically significant? How can you tell?
 
-**Write your answer here**
+The DiD estimate is not statistically significant at the 5% nor the 10% level (p-val = .864 > .05) and the confidence intervals are -13.61 and 11.42 on an estimate of -1.094 which is too large.
 
 19. We can repeat the estimation in (17) using $\log(revenue)$ rather than $revenue$. Why might we want to do that?
 Run this regression and interpret the magnitude of the treatment effect.
 
 ```{r}
-# Write your answer here
+
+did_reg_log <- lm(log(revenue) ~ after*treatment, data=paidsearch)
+
+tidy(did_reg_log, conf.int = TRUE)
+
 ```
 
 
@@ -338,14 +395,59 @@ Are these appropriate?
 If not, adjust them to compute what you believe to be more conservative (and unbiased) standard error estimates.
 
 ```{r}
-# Write your answer here
+
+# The standard errors of the first regression run (regular revenues), were way too big as they all exceeded 2.6.
+# However, the standard errors or the second regression (log(revenues)) were already a lot better as all errors preceded 0.036.
+
+check_se <- paidsearch %>%
+  mutate(residuals = resid(did_reg_log),
+         fitted_val = predict(did_reg_log))
+
+check_se %>%
+  ggplot(aes(x = fitted_val,
+             y = residuals,
+             alpha = 0.35)) +
+  geom_point() +
+  theme_bw() +
+  theme(legend.position = "none")
+
+#They're very clustered
+
+tidy(did_reg_log,se = "standard" , conf.int = TRUE)
+
+library(estimatr)
+did_reg_log1 <- lm_robust(log(revenue) ~ after*treatment,
+                          data=paidsearch)
+
+tidy(did_reg_log1, conf.int = TRUE)
+#Heteroskedasticity assumed changed rarely anything
+
+
+did_reg_log2 <- lm_robust(log(revenue) ~ after * treatment,
+                   clusters = dma,
+                   data = paidsearch)
+
+tidy(did_reg_log2, conf.int = TRUE)
+#This actually decreases the std. error's magnitude of the estimate of interest
+
+
 ```
 
 21. Do you think fixed effects should be added into the regression? Why?
 Add them to your regression and report the results.
 
 ```{r}
-# Write your answer here
+
+# I think fixed effects should be added for time as well as the fixed effects of dma
+
+
+did_reg_log3 <- feols(revenue ~ after*treatment + dma + date |
+                        dma + date,
+                      data = paidsearch)
+#Errors reporting on after and treatment to show collinearity
+
+tidy(did_reg_log3, conf.int = TRUE)
+
 ```
 
 22. Construct a regression table that presents three or more of the regressions you have run.
