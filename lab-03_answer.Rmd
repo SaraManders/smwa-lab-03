@@ -193,14 +193,12 @@ paidsearch <- paidsearch %>%
 #Plot the data over time
   
   paidsearch %>%
-  ggplot(aes(x = date, y = avg_rev_date, colour = factor(search_stays_on)), 
-         xlab("Date"),
-         ylab("Revenue ('000s of USD"),
-         legend()) +
+  ggplot(aes(x = date, y = avg_rev_date, colour = factor(search_stays_on))) +
   geom_line() +
+  labs(x = "Date (Months)",
+       y = "Revenues ('000s in USD)") +
   ggtitle("Average Daily Revenue from Search Engine Advertising") +
   theme_bw()
-
 
 ```
 
