@@ -249,8 +249,9 @@ knitr::include_graphics('figs/ebay_experiment.png')
 ```{r}
 
 paidsearch %>%
-  ggplot(aes(x = calweek, y = avg_rev_calweek, colour = factor(search_stays_on), fill =  factor(search_stays_on))) +
-  geom_line() +
+  ggplot(aes(x = calweek, y = avg_rev_calweek, color = factor(search_stays_on), fill =  factor(search_stays_on), 
+             group = factor(search_stays_on))) +
+  geom_line(aes(group = factor(search_stays_on), colour = factor(search_stays_on))) + #I can't get the lines to split based on factor(search_stays_on)
   geom_vline(xintercept = 21) +
   ggtitle("Average Daily Revenue from Search Engine Advertising") +
   labs(x = "Calender Week",
