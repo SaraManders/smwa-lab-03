@@ -169,8 +169,37 @@ paidsearch %>%
   count(date)
 #113 rows = 113 days in dataset
 
-test <- paidsearch %>%
-  group_by(date, dma)
+mean_rev <- paidsearch %>%
+  group_by(dma) %>%
+  mutate(avg_rev_dma = mean(revenue)) %>%
+  ungroup()
+
+mean_rev %>%
+  group_by(date) %>%
+  print(avg_rev_dma)
+
+#Average revenue per dma
+paidsearch <- paidsearch %>%
+  group_by(dma) %>%
+  mutate(avg_rev_dma = mean(revenue)) %>%
+  ungroup()
+
+#Average revenue per day
+paidsearch <- paidsearch %>%
+  group_by(date) %>%
+  mutate(avg_rev_date = mean(revenue)) %>%
+  ungroup()
+
+#Plot the data over time
+
+paidsearch %>%
+  group_by(date) %>%
+  ggplot(aes(x = date, y = avg_rev_dma) +
+  geom_point()) +
+  ggtitle("Average Revenue per DMA over time",
+          subtitle = "From 01-04-2012 until and including 22-07-2012")
+  theme_bw()
+
 
 ```
 
@@ -183,9 +212,9 @@ To make this easier, run the following code to extract the calendar week from ea
 ```{r}
 # Uncomment these lines by removing the #'s
 # in front of the code when you get to this point
-#paidsearch <-
-#    paidsearch %>%
-#    mutate(calweek = week(date))
+paidsearch <-
+    paidsearch %>%
+    mutate(calweek = week(date))
 ```
 
 
@@ -193,7 +222,17 @@ To make this easier, run the following code to extract the calendar week from ea
 The resulting dataset should have 34 observations, 17 where `search_stays_on =1` and 17 where `search_stays_on =0`.
 
 ```{r}
-# Write your answer here
+
+paidsearch <- paidsearch %>%
+  group_by(calweek) %>%
+  mutate(avg_rev_calweek = mean(avg_rev_date)) %>% #average daily revenue per calender week for all DMAs separately
+  ungroup()
+
+output <- paidsearch %>%
+  select(search_stays_on, avg_rev_calweek) %>%
+  distinct(avg_rev_calweek, search_stays_on) %>%
+  group_by(search_stays_on)
+
 ```
 
 
