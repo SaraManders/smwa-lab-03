@@ -191,13 +191,14 @@ paidsearch <- paidsearch %>%
   ungroup()
 
 #Plot the data over time
-
-paidsearch %>%
-  group_by(date) %>%
-  ggplot() +
-  geom_line(aes(x = date, y = avg_rev_date))) +
-  ggtitle("Average Revenue per DMA over time",
-          subtitle = "From 01-04-2012 until and including 22-07-2012")
+  
+  paidsearch %>%
+  ggplot(aes(x = date, y = avg_rev_date, colour = factor(search_stays_on)), 
+         xlab("Date"),
+         ylab("Revenue ('000s of USD"),
+         legend()) +
+  geom_line() +
+  ggtitle("Average Daily Revenue from Search Engine Advertising") +
   theme_bw()
 
 
@@ -248,9 +249,12 @@ knitr::include_graphics('figs/ebay_experiment.png')
 ```{r}
 
 paidsearch %>%
-  ggplot() +
+  ggplot(aes(x = calweek, y = avg_rev_calweek, colour = factor(search_stays_on), fill =  factor(search_stays_on))) +
   geom_line() +
-  ggtitle() +
+  geom_vline(xintercept = 21) +
+  ggtitle("Average Daily Revenue from Search Engine Advertising") +
+  labs(x = "Calender Week",
+       y = "Revenues ('000s in USD)") +
   theme_bw()
 
 ```
