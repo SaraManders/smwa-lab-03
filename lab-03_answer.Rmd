@@ -194,8 +194,8 @@ paidsearch <- paidsearch %>%
 
 paidsearch %>%
   group_by(date) %>%
-  ggplot(aes(x = date, y = avg_rev_dma) +
-  geom_point()) +
+  ggplot() +
+  geom_line(aes(x = date, y = avg_rev_date))) +
   ggtitle("Average Revenue per DMA over time",
           subtitle = "From 01-04-2012 until and including 22-07-2012")
   theme_bw()
