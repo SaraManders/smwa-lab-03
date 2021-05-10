@@ -131,6 +131,12 @@ glimpse(paidsearch)
 paidsearch <- paidsearch %>%
   rename("search_stays_on" = `search stays on`)
 
+#Proposed solution
+library(janitor)
+
+paidsearch <- paidsearch %>%
+  clean_names()
+
 ```
 
 
@@ -142,6 +148,7 @@ Modify the `revenue` variable so that the new values are in '000s of USD.
 paidsearch <- paidsearch %>%
   mutate(revenue = revenue/1000)
 
+# well done!
 
 ```
 
@@ -199,6 +206,8 @@ paidsearch <- paidsearch %>%
        y = "Revenues ('000s in USD)") +
   ggtitle("Average Daily Revenue from Search Engine Advertising") +
   theme_bw()
+  
+  #well done!
 
 ```
 
@@ -232,6 +241,13 @@ output <- paidsearch %>%
   distinct(avg_rev_calweek, search_stays_on) %>%
   group_by(search_stays_on)
 
+# proposed solution
+
+grp_avg <- paidsearch %>%
+  group_by(search_stays_on, calweek) %>%
+  summarise(revenue = mean(revenue)) %>%
+  arrange(calweek, search_stays_on)
+
 ```
 
 
@@ -253,6 +269,22 @@ paidsearch %>%
   ggtitle("Average Daily Revenue from Search Engine Advertising") +
   labs(x = "Calender Week",
        y = "Revenues ('000s in USD)") +
+  theme_bw()
+
+#proposed solution
+
+exp_start <- as_date("2012-05-22")
+
+
+grp_avg %>%
+  ggplot(aes(x = calweek,
+             y = revenue,
+             color = factor(search_stays_on))) +
+  geom_line() +
+  geom_vline(xintercept = week(exp_start)) +
+  ggtitle("Average Daily Revenue from Search Engine Advertising") +
+  xlab("Calender Week") +
+  ylab("Revenue ('000s of USD") +
   theme_bw()
 
 ```
@@ -303,7 +335,13 @@ paidsearch <- paidsearch %>%
 paidsearch <- paidsearch %>%
   mutate(treatment = as.numeric(treatment))
 
+#Proposed solution
 
+paidsearch <- paidsearch %>%
+  mutate(treatment = case_when(
+    search_stays_on==0 ~ 1,
+    TRUE ~ 0)) %>%
+  rename(after = treatment_period)
 
 ```
 
@@ -334,6 +372,16 @@ did_table <- means %>%
 
 print(did_table)
 
+#proposed solution
+
+#proposed solution
+treat_table <- paidsearch %>%
+  group_by(after, treatment) %>%
+  summarise(revenue = mean(revenue)) %>%
+  ungroup()
+
+print(treat_table)
+
 ```
 
 
@@ -350,6 +398,17 @@ bef_after_treated <- filter(means, treatment==0,after==1)$revenue -
 did <- bef_after_treated - bef_after_untreated
 
 print(paste("Diff in Diff EstimateL ", did))
+
+#proposed solution
+treat_table %>%
+  pivot_wider(names_from = treatment,
+              values_from = revenue) %>%
+  mutate_all(funs(. -lag(.))) %>%
+  mutate(did_simple = `1` - `0`) %>%
+  na.omit() %>%
+  select(did_simple)
+
+#same answer!!
 
 ```
 
@@ -371,6 +430,15 @@ reg_did <- lm(revenue ~ after*treatment, data = paidsearch)
 
 tidy(reg_did, conf.int = TRUE)
 
+#proposed solution
+
+reg_did_sol <- feols(revenue ~ after + treatment + after:treatment,
+                     data = paidsearch)
+
+tidy(reg_did_sol, conf.int = TRUE)
+
+#funny, cause same answers :)
+
 ```
 
 
@@ -387,6 +455,15 @@ did_reg_log <- lm(log(revenue) ~ after*treatment, data=paidsearch)
 
 tidy(did_reg_log, conf.int = TRUE)
 
+#proposed solution
+
+did_reg_log_sol <- feols(log(revenue) ~ after + treatment + after:treatment,
+                         data = paidsearch)
+
+
+tidy(did_reg_log_sol, conf.int = TRUE)
+
+#funny cause same answers again :)
 ```
 
 
@@ -441,12 +518,15 @@ Add them to your regression and report the results.
 # I think fixed effects should be added for time as well as the fixed effects of dma
 
 
-did_reg_log3 <- feols(revenue ~ after*treatment + dma + date |
-                        dma + date,
+did_reg_log3 <- feols(log(revenue) ~ after + treatment + after:treatment |
+                        dma, date,
                       data = paidsearch)
 #Errors reporting on after and treatment to show collinearity
 
 tidy(did_reg_log3, conf.int = TRUE)
+
+#After adding these, I take back that fixed effects should be added.
+#  Because, treatment shows collinearity to dma, and after with date.
 
 ```
 
@@ -469,7 +549,24 @@ What is the parallel trends assumption and why do we need it?
 Does it appear satisfied in our data?
 
 ```{r}
-# Write your answer here
+
+#The parallel trends assumption enholds that in the pre-treatment period, of both groups measured and estimated, the outcome variable (in this case revenue) should have similar (parallel) patterns. This ensures the two groups can actually be compared, as the assumption can be made that without treatment, the outcome variable would have continued to show parallel trend.
+
+grp_avg %>%
+  filter(calweek <= week(exp_start)) %>%
+  ggplot(aes(x = calweek,
+             y = revenue,
+             color = factor(search_stays_on))) +
+  geom_line() +
+  ggtitle("Average Daily Revenue from Search Engine Advertising",
+          subtitle = "Pre-treatment period") +
+  xlab("Calender Week") +
+  ylab("Revenue ('000s in USD") +
+  theme_bw()
+
+
+#The revenue evolves relatively equal over time pre-treatment for both dma groups where search engine advertising stays on compared to dmas where it gets turned off, so yes the parallel trends assumption seems to hold
+
 ```
 
 
